@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>docsdrop.open — Instant Private File Transfer</title>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("DD_THEME")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light")}catch(e){}</script>
+<script>window.DDready=new Promise(function(r){window._ddRes=r;});</script>
+<script type="module">
+/* Realtime Database is used ONLY to pass a tiny connection handshake (signaling). Files never touch it. */
+const V="11.10.0",B="https://www.gstatic.com/firebasejs/"+V+"/";
+try{
+  const a=await import(B+"firebase-app.js"),d=await import(B+"firebase-database.js");
+  const app=a.initializeApp({
+    apiKey:"AIzaSyCn9SMgiEn-3-geQxGLUAEfaiy4l0Lh-Ws",
+    authDomain:"docdrop-open.firebaseapp.com",
+    databaseURL:"https://docdrop-open-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:"docdrop-open",
+    storageBucket:"docdrop-open.firebasestorage.app",
+    messagingSenderId:"411956253168",
+    appId:"1:411956253168:web:2fea507a5a8776ce414d35"
+  });
+  window.DD={db:d.getDatabase(app),ref:d.ref,get:d.get,set:d.set,update:d.update,remove:d.remove,onValue:d.onValue};
+  window._ddRes(true);
+}catch(e){console.error(e);window.DD=null;window._ddRes(false);}
+</script>
+<style>
+:root{--bg:#fff;--fg:#0b0b0b;--mut:#666;--k:#0b0b0b;--sh:5px 6px 0 var(--k)}
+:root[data-theme=dark]{--bg:#0b0b0b;--fg:#f4f4f4;--mut:#9a9a9a;--k:#f4f4f4}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font-family:Arial,Helvetica,sans-serif}
+body{padding:env(safe-area-inset-top,0) 14px env(safe-area-inset-bottom,0)}
+button,input{font:inherit}button{cursor:pointer}
+.wrap{max-width:560px;margin:auto;padding:16px 0 40px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}
+.logo{font:900 26px Arial Black,Arial,sans-serif;letter-spacing:2px}
+.logo small{font-size:12px;letter-spacing:1px;opacity:.7}
+.card{border:2px solid var(--k);border-radius:18px;box-shadow:var(--sh);padding:18px;margin-bottom:16px;background:var(--bg)}
+.btn{border:2px solid var(--k);background:var(--bg);color:var(--fg);padding:12px 15px;border-radius:10px;font-weight:900;text-transform:uppercase;letter-spacing:.4px;box-shadow:3px 4px 0 var(--k)}
+.btn:active{transform:translate(3px,4px);box-shadow:none}
+.btn.black{background:var(--k);color:var(--bg)}
+.btn.full{width:100%}.btn:disabled{opacity:.45;pointer-events:none}
+.btn.sm{padding:8px 11px;font-size:11px}
+h2{margin:0 0 6px;font:900 20px Arial Black,Arial,sans-serif}
+.sub{color:var(--mut);font-size:14px;line-height:1.5;margin:0 0 14px}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.tabs .btn.on{background:var(--k);color:var(--bg)}
+.hidden{display:none!important}
+.otp{font:900 44px Arial Black,Arial,sans-serif;letter-spacing:8px;text-align:center;border:2px dashed var(--k);border-radius:14px;padding:16px 8px;margin:12px 0;user-select:all}
+.otp-in{width:100%;font:900 34px Arial Black,Arial,sans-serif;letter-spacing:8px;text-align:center;border:2px solid var(--k);border-radius:12px;padding:12px;background:var(--bg);color:var(--fg);outline:none;margin-bottom:12px}
+.status{font-size:13px;font-weight:900;margin:10px 0;min-height:18px;text-align:center}
+.bar{height:14px;border:2px solid var(--k);border-radius:20px;overflow:hidden;margin-top:8px}
+.bar>div{height:100%;width:0;background:var(--k);transition:width .15s}
+.file{border:2px solid var(--k);border-radius:12px;padding:10px 12px;margin:10px 0;font-size:14px;overflow-wrap:anywhere}
+.tag{display:inline-flex;align-items:center;gap:8px;padding:7px 13px;border:2px solid var(--k);border-radius:999px;font-weight:900;font-size:12px;box-shadow:3px 3px 0 var(--k)}
+.tag i{width:11px;height:11px;border-radius:50%;background:#22a84a}
+.tag.connecting i{background:#f0a500;animation:p 1s infinite}.tag.offline i{background:#e03131}
+@keyframes p{50%{opacity:.3}}
+.trust summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px;font:900 20px Arial Black,Arial,sans-serif}
+.trust summary::-webkit-details-marker{display:none}
+.trust summary::after{content:"+";font-size:26px;line-height:1}
+.trust details[open] summary::after{content:"−"}
+.trust ul{margin-top:14px!important;margin:0;padding:0;list-style:none;display:grid;gap:10px}
+.trust li{display:flex;gap:10px;font-size:14px;line-height:1.45}
+.trust b.n{flex:0 0 26px;height:26px;border:2px solid var(--k);border-radius:50%;display:grid;place-items:center;font-size:12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0));z-index:9;max-width:92vw;padding:12px 16px;border:2px solid var(--bg);border-radius:12px;background:var(--k);color:var(--bg);font-size:13px;font-weight:900}
+.dz.over{background:var(--k);color:var(--bg)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div class="logo">DOCSDROP<small>.open</small></div>
+    <div class="row" style="display:flex;gap:8px;align-items:center">
+      <span class="tag connecting" id="netTag"><i></i><span>Connecting</span></span>
+      <button class="btn sm" id="themeBtn" aria-label="Toggle theme">◐</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="btn on" id="tabSend">Send</button>
+    <button class="btn" id="tabRecv">Receive</button>
+  </div>
+
+  <section class="card" id="sendCard">
+    <h2>SEND A FILE</h2>
+    <input type="file" id="fileIn" class="hidden">
+    <button class="btn black full" id="pickBtn" style="margin-top:12px">SELECT FILE</button>
+    <div class="file hidden" id="fileInfo"></div>
+    <div id="otpBox" class="hidden">
+      <div class="otp" id="otpText">000000</div>
+      <p class="sub" style="text-align:center">Type this code on the receiver's device. It works once and expires in 5 minutes.</p>
+    </div>
+    <div class="status" id="sendStatus"></div>
+    <div class="bar hidden" id="sendBar"><div></div></div>
+    <button class="btn sm hidden" id="cancelSend" style="margin-top:12px">CANCEL</button>
+  </section>
+
+  <section class="card hidden" id="recvCard">
+    <h2>RECEIVE A FILE</h2>
+    <p class="sub">Enter the 6-digit OTP shown on the sender's device.</p>
+    <input class="otp-in" id="otpIn" maxlength="6" inputmode="numeric" placeholder="000000" autocomplete="off">
+    <button class="btn black full" id="recvBtn">RECEIVE FILE</button>
+    <div class="status" id="recvStatus"></div>
+    <div class="bar hidden" id="recvBar"><div></div></div>
+  </section>
+
+  <section class="card trust"><details>
+    <summary>WHY YOU CAN TRUST IT</summary>
+    <ul>
+      <li><b class="n">1</b><span><b>No accounts.</b> No sign-up, no login, no access code to open the site.</span></li>
+      <li><b class="n">2</b><span><b>Direct transfer.</b> The file goes straight from the sender's device to the receiver's, encrypted in transit (WebRTC).</span></li>
+      <li><b class="n">3</b><span><b>Zero storage.</b> Files are never saved to any database. Only a tiny connection handshake is exchanged, and it is deleted the moment the devices connect.</span></li>
+      <li><b class="n">4</b><span><b>One-time code.</b> Each OTP works for a single transfer and expires after 5 minutes.</span></li>
+      <li><b class="n">5</b><span><b>Nothing left behind.</b> Close the tab and the transfer is gone. There is no history to leak.</span></li>
+    </ul>
+  </details></section>
+</div>
+<div class="toast hidden" id="toast"></div>
+
+<script>
+const $=id=>document.getElementById(id);
+const F=()=>window.DD&&window.DD.db?window.DD:null;
+const ICE={iceServers:[{urls:["stun:stun.l.google.com:19302","stun:stun1.l.google.com:19302"]}]};
+const COL="dd_signal",CHUNK=16384,HIGH=1<<20,TTL=5*60*1000;
+let cloud=false,sess=null,file=null;
+
+/* theme */
+$("themeBtn").onclick=()=>{const t=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=t;try{localStorage.setItem("DD_THEME",t)}catch(e){}};
+function toast(m){const e=$("toast");e.textContent=m;e.classList.remove("hidden");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.add("hidden"),3000);}
+const fmt=n=>n<1024?n+" B":n<1048576?(n/1024).toFixed(1)+" KB":n<1073741824?(n/1048576).toFixed(1)+" MB":(n/1073741824).toFixed(2)+" GB";
+
+/* connection tag: Online / Connecting / Offline */
+let busyLink=false;
+function tag(){
+  const t=$("netTag");
+  const s=!navigator.onLine?"offline":(!cloud||busyLink)?"connecting":"online";
+  t.className="tag "+s;t.lastElementChild.textContent={online:"Online",connecting:"Connecting",offline:"Offline"}[s];
+}
+addEventListener("online",tag);addEventListener("offline",tag);
+Promise.race([window.DDready,new Promise(r=>setTimeout(()=>r(false),10000))]).then(ok=>{cloud=!!(ok&&F());tag();if(!cloud)toast("Could not reach the connection service.");});
+
+/* tabs */
+function tab(s){$("sendCard").classList.toggle("hidden",!s);$("recvCard").classList.toggle("hidden",s);$("tabSend").classList.toggle("on",s);$("tabRecv").classList.toggle("on",!s);}
+$("tabSend").onclick=()=>tab(true);$("tabRecv").onclick=()=>tab(false);
+
+/* helpers */
+function rnd(n){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]%n;}
+function waitIce(pc){return new Promise(res=>{if(pc.iceGatheringState==="complete")return res();const f=()=>{if(pc.iceGatheringState==="complete"){pc.removeEventListener("icegatheringstatechange",f);res();}};pc.addEventListener("icegatheringstatechange",f);setTimeout(res,4000);});}
+function bar(id,p){const b=$(id);b.classList.remove("hidden");b.firstElementChild.style.width=Math.min(100,p)+"%";}
+async function wipe(code){const c=F();if(c&&code){try{await c.remove(c.ref(c.db,COL+"/"+code));}catch(e){}}}
+function teardown(){
+  if(!sess)return;
+  const s=sess;sess=null;busyLink=false;
+  try{s.unsub&&s.unsub();}catch(e){}
+  clearTimeout(s.timer);
+  try{s.dc&&s.dc.close();}catch(e){}try{s.pc&&s.pc.close();}catch(e){}
+  wipe(s.code);tag();
+}
+addEventListener("pagehide",()=>{if(sess)wipe(sess.code);});
+
+/* ---------- SENDER ---------- */
+async function genOtp(){
+  const c=F();if(!c||!navigator.onLine){toast("Not connected yet.");resetSend();return;}
+  busyLink=true;tag();
+  $("sendStatus").textContent="Creating code…";
+  try{
+    const pc=new RTCPeerConnection(ICE),dc=pc.createDataChannel("f",{ordered:true});
+    dc.binaryType="arraybuffer";dc.bufferedAmountThreshold=HIGH/2;
+    const s=sess={pc,dc,code:"",role:"send"};
+    await pc.setLocalDescription(await pc.createOffer());await waitIce(pc);
+    let code="";
+    for(let i=0;i<10;i++){
+      const cand=String(100000+rnd(900000)),ref=c.ref(c.db,COL+"/"+cand);
+      const ex=await c.get(ref);
+      if(ex.exists()&&Date.now()-(ex.val().t||0)<TTL)continue;
+      await c.set(ref,{offer:JSON.stringify(pc.localDescription),t:Date.now()});code=cand;break;
+    }
+    if(!code)throw new Error("code");
+    s.code=code;
+    $("otpText").textContent=code;$("otpBox").classList.remove("hidden");$("cancelSend").classList.remove("hidden");
+    $("sendStatus").textContent="Waiting for the receiver…";
+    s.timer=setTimeout(()=>{if(sess===s&&!s.open){toast("Code expired.");resetSend();}},TTL);
+    let gotAnswer=false;
+    s.unsub=c.onValue(c.ref(c.db,COL+"/"+code),async snap=>{
+      const d=snap.val();
+      if(d&&d.answer&&!gotAnswer){gotAnswer=true;$("sendStatus").textContent="Receiver found. Connecting…";
+        try{await pc.setRemoteDescription(JSON.parse(d.answer));}catch(e){toast("Connection failed.");resetSend();}}
+    });
+    dc.onopen=()=>{s.open=true;wipe(code);$("sendStatus").textContent=file?"Connected. Sending…":"Connected. Select a file to send.";trySend();};
+    pc.onconnectionstatechange=()=>{if(["failed","disconnected","closed"].includes(pc.connectionState)&&sess===s&&!s.done){toast("Connection lost.");resetSend();}};
+  }catch(e){console.warn(e);toast("Could not create code. Check your database rules.");resetSend();}
+}
+function resetSend(){
+  teardown();file=null;
+  $("otpBox").classList.add("hidden");$("fileInfo").classList.add("hidden");
+  $("sendBar").classList.add("hidden");$("cancelSend").classList.add("hidden");$("sendStatus").textContent="";$("fileIn").value="";
+}
+$("cancelSend").onclick=resetSend;
+$("pickBtn").onclick=()=>$("fileIn").click();
+$("fileIn").onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  file=f;$("fileInfo").textContent=f.name+" • "+fmt(f.size);$("fileInfo").classList.remove("hidden");
+  if(!sess){genOtp();}
+  else{$("sendStatus").textContent=sess.open?"Sending…":"Waiting for the receiver…";trySend();}
+};
+async function trySend(){
+  const s=sess;if(!s||!s.open||!file||s.sending)return;
+  s.sending=true;const dc=s.dc,f=file;
+  try{
+    dc.send(JSON.stringify({name:f.name,size:f.size,type:f.type||""}));
+    let off=0;
+    while(off<f.size){
+      if(sess!==s)return;
+      if(dc.bufferedAmount>HIGH){await new Promise(r=>{dc.onbufferedamountlow=()=>{dc.onbufferedamountlow=null;r();};});}
+      const buf=await f.slice(off,off+CHUNK).arrayBuffer();
+      dc.send(buf);off+=buf.byteLength;bar("sendBar",off/f.size*100);
+      $("sendStatus").textContent="Sending… "+Math.floor(off/f.size*100)+"%";
+    }
+    dc.send("END");
+    while(dc.bufferedAmount>0){await new Promise(r=>setTimeout(r,100));}
+    s.done=true;$("sendStatus").textContent="Sent! Nothing was stored anywhere.";
+    setTimeout(()=>{if(sess===s)resetSend();},2500);
+  }catch(e){console.warn(e);toast("Transfer failed.");resetSend();}
+}
+
+/* ---------- RECEIVER ---------- */
+$("otpIn").oninput=e=>{e.target.value=e.target.value.replace(/\D/g,"").slice(0,6);};
+$("recvBtn").onclick=async()=>{
+  const code=$("otpIn").value.trim(),c=F();
+  if(!/^\d{6}$/.test(code)){toast("Enter the 6-digit OTP.");return;}
+  if(!c||!navigator.onLine){toast("Not connected yet.");return;}
+  teardown();busyLink=true;tag();$("recvBtn").disabled=true;$("recvStatus").textContent="Looking for sender…";
+  try{
+    const ref=c.ref(c.db,COL+"/"+code),snap=await c.get(ref),d=snap.exists()&&snap.val();
+    if(!d||!d.offer||d.answer||Date.now()-(d.t||0)>TTL){toast("Invalid, used or expired code.");return endRecv();}
+    const pc=new RTCPeerConnection(ICE),s=sess={pc,code,role:"recv"};
+    let meta=null,parts=[],got=0;
+    pc.ondatachannel=e=>{
+      const dc=e.channel;dc.binaryType="arraybuffer";s.dc=dc;
+      dc.onopen=()=>{$("recvStatus").textContent="Connected. Waiting for the file…";};
+      dc.onmessage=ev=>{
+        if(typeof ev.data==="string"){
+          if(ev.data==="END"){
+            if(meta&&got===meta.size){
+              const blob=new Blob(parts,{type:meta.type||"application/octet-stream"}),a=document.createElement("a");
+              a.href=URL.createObjectURL(blob);a.download=meta.name;document.body.appendChild(a);a.click();
+              setTimeout(()=>{a.remove();URL.revokeObjectURL(a.href);},4000);
+              $("recvStatus").textContent="Received "+meta.name+". Nothing was stored anywhere.";
+            }else toast("File incomplete.");
+            s.done=true;parts=[];setTimeout(()=>{if(sess===s)endRecv(true);},800);
+          }else{meta=JSON.parse(ev.data);$("recvStatus").textContent="Receiving "+meta.name+" ("+fmt(meta.size)+")…";}
+        }else{parts.push(ev.data);got+=ev.data.byteLength;if(meta)bar("recvBar",got/meta.size*100);}
+      };
+    };
+    pc.onconnectionstatechange=()=>{if(["failed","disconnected","closed"].includes(pc.connectionState)&&sess===s&&!s.done){toast("Connection lost.");endRecv();}};
+    await pc.setRemoteDescription(JSON.parse(d.offer));
+    await pc.setLocalDescription(await pc.createAnswer());await waitIce(pc);
+    await c.update(ref,{answer:JSON.stringify(pc.localDescription)});
+    $("recvStatus").textContent="Connecting to sender…";
+    s.timer=setTimeout(()=>{if(sess===s&&!s.dc){toast("Could not connect.");endRecv();}},30000);
+  }catch(e){console.warn(e);toast("Could not connect. Check the code and try again.");endRecv();}
+};
+function endRecv(keepMsg){
+  const m=$("recvStatus").textContent;teardown();
+  $("recvBtn").disabled=false;$("otpIn").value="";$("recvBar").classList.add("hidden");
+  $("recvStatus").textContent=keepMsg?m:"";
+}
+tag();
+</script>
+</body>
+</html>
